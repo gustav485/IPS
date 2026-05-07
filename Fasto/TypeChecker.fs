@@ -135,7 +135,7 @@ and checkExp  (ftab : FunTable)
 
     | Divide (e1, e2, pos) ->
       let (e1_dec, e2_dec) = checkBinOp ftab vtab (pos, Int, e1, e2)
-      if e2 == 0 then
+      if e1 == 0 || e2 == 0 then
           failwith "Can't divide by zero"
       else
           (Int, Divide (e1_dec, e2_dec, pos))
@@ -150,14 +150,15 @@ and checkExp  (ftab : FunTable)
     | Or (e1, e2, pos) ->
         let (e1_dec, e2_dec) = checkBinOp ftab vtab (pos, Int, e1, e2)
         if e1 == true then
-            blahh
+            
         else if e2 == true then
-            blah
+            
         failwith "Or condition not met"
 
     | Not (e1, pos) ->
         let (e1_dec) = check ftab vtab (pos, Int, e1)
-        failwith "Unimplemented type check of not"
+        if e1 == true then
+          
 
     | Negate (e1, pos) ->
         let (e1_dec) = check ftab vtab (pos, Int, e1)

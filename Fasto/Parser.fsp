@@ -49,9 +49,21 @@ let parse_error_rich =
 %token <Position> COMMA SEMICOLON EQ ARROW LPAR RPAR LBRACKET RBRACKET
 %token <Position> LCURLY RCURLY EOF
 
+//keywords
+%token <Position> TRUE FALSE NOT
+//symbols
+%token <Position> TIMES DIVIDE AND OR NOT NEGATE
+
 %nonassoc ELSE IN
+%left AND OR
+%left NOT
+
 %left DEQ LTH
 %left PLUS MINUS
+
+%left TIMES DIVIDE 
+%left NEGATE
+
 
 %start Prog
 %type <AbSyn.UntypedProg> Prog
