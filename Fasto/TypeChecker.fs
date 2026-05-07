@@ -150,19 +150,20 @@ and checkExp  (ftab : FunTable)
     | Or (e1, e2, pos) ->
         let (e1_dec, e2_dec) = checkBinOp ftab vtab (pos, Int, e1, e2)
         if e1 == true then
-            
+            (Bool, Or (e1_dec, e2_dec, pos))
         else if e2 == true then
-            
+            (Bool, Or (e1_dec, e2_dec, pos))
         failwith "Or condition not met"
 
     | Not (e1, pos) ->
         let (e1_dec) = check ftab vtab (pos, Int, e1)
-        if e1 == true then
-          
+        if e1_dec = Bool then
+          (Bool, Not (e1_dec, pos))
 
     | Negate (e1, pos) ->
         let (e1_dec) = check ftab vtab (pos, Int, e1)
-        failwith "Unimplemented type check of negate"
+        if e1_dec = Bool then
+          (Bool, Negate (e1_dec, pos))
 
     (* The types for e1, e2 must be the same. The result is always a Bool. *)
     | Equal (e1, e2, pos) ->

@@ -50,9 +50,9 @@ let parse_error_rich =
 %token <Position> LCURLY RCURLY EOF
 
 //keywords
-%token <Position> TRUE FALSE NOT
+%token <Position> FALSE NOT
 //symbols
-%token <Position> TIMES DIVIDE AND OR NOT NEGATE
+%token <Position> TIMES DIVIDE AND OR NEGATE
 
 %nonassoc ELSE IN
 %left AND OR
