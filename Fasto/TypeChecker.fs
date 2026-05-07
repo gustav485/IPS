@@ -130,21 +130,37 @@ and checkExp  (ftab : FunTable)
         See `AbSyn.fs` for the expression constructors of `Times`, ...
     *)
     | Times (e1, e2, pos) ->
-        failwith "Unimplemented type check of multiplication"
+      let (e1_dec, e2_dec) = checkBinOp ftab vtab (pos, Int, e1, e2)
+      (Int, Times (e1_dec, e2_dec, pos))
 
-    | Divide (_, _, _) ->
-        failwith "Unimplemented type check of division"
+    | Divide (e1, e2, pos) ->
+      let (e1_dec, e2_dec) = checkBinOp ftab vtab (pos, Int, e1, e2)
+      if e2 == 0 then
+          failwith "Can't divide by zero"
+      else
+          (Int, Divide (e1_dec, e2_dec, pos))
 
-    | And (_, _, _) ->
-        failwith "Unimplemented type check of &&"
+    | And (e1, e2, pos) ->
+        let (e1_dec, e2_dec) = checkBinOp ftab vtab (pos, Int, e1, e2)
+        if e1 == true && e2 == true then
+            (Bool, And (e1_dec, e2_dec, pos))
+        else 
+            failwith "Condition not met"
 
-    | Or (_, _, _) ->
-        failwith "Unimplemented type check of ||"
+    | Or (e1, e2, pos) ->
+        let (e1_dec, e2_dec) = checkBinOp ftab vtab (pos, Int, e1, e2)
+        if e1 == true then
+            blahh
+        else if e2 == true then
+            blah
+        failwith "Or condition not met"
 
-    | Not (_, _) ->
+    | Not (e1, pos) ->
+        let (e1_dec) = check ftab vtab (pos, Int, e1)
         failwith "Unimplemented type check of not"
 
-    | Negate (_, _) ->
+    | Negate (e1, pos) ->
+        let (e1_dec) = check ftab vtab (pos, Int, e1)
         failwith "Unimplemented type check of negate"
 
     (* The types for e1, e2 must be the same. The result is always a Bool. *)
