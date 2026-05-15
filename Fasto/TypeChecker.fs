@@ -130,39 +130,32 @@ and checkExp  (ftab : FunTable)
         See `AbSyn.fs` for the expression constructors of `Times`, ...
     *)
     | Times (e1, e2, pos) ->
-      let (e1_dec, e2_dec) = checkBinOp ftab vtab (pos, Int, e1, e2)
-      (Int, Times (e1_dec, e2_dec, pos))
+        let (e1_dec, e2_dec) = checkBinOp ftab vtab (pos, Int, e1, e2)
+        (Int, Times (e1_dec, e2_dec, pos))
 
     | Divide (e1, e2, pos) ->
-      let (e1_dec, e2_dec) = checkBinOp ftab vtab (pos, Int, e1, e2)
-      if e1 == 0 || e2 == 0 then
-          failwith "Can't divide by zero"
-      else
-          (Int, Divide (e1_dec, e2_dec, pos))
+        let (e1_dec, e2_dec) = checkBinOp ftab vtab (pos, Int, e1, e2)
+        (Int, Divide (e1_dec, e2_dec, pos))
 
     | And (e1, e2, pos) ->
-        let (e1_dec, e2_dec) = checkBinOp ftab vtab (pos, Int, e1, e2)
-        if e1 == true && e2 == true then
-            (Bool, And (e1_dec, e2_dec, pos))
-        else 
-            failwith "Condition not met"
+        let (e1_dec, e2_dec) = checkBinOp ftab vtab (pos, Bool, e1, e2)
+        (Bool, And (e1_dec, e2_dec, pos))
 
     | Or (e1, e2, pos) ->
-        let (e1_dec, e2_dec) = checkBinOp ftab vtab (pos, Int, e1, e2)
-        if e1 == true then
-            
-        else if e2 == true then
-            
-        failwith "Or condition not met"
+        let (e1_dec, e2_dec) = checkBinOp ftab vtab (pos, Bool, e1, e2)
+        (Bool, Or (e1_dec, e2_dec, pos))
 
     | Not (e1, pos) ->
-        let (e1_dec) = check ftab vtab (pos, Int, e1)
-        if e1 == true then
-          
+        let (t, e1_dec) = checkExp ftab vtab e1
+        if t <> Bool then
+          reportTypeWrong "operand of not" Bool t pos
+        (Bool, Not (e1_dec, pos))
 
     | Negate (e1, pos) ->
-        let (e1_dec) = check ftab vtab (pos, Int, e1)
-        failwith "Unimplemented type check of negate"
+        let (t, e1_dec) = checkExp ftab vtab e1
+        if t <> Int then
+          reportTypeWrong "operand of ~" Int t pos
+        (Int, Negate (e1_dec, pos))
 
     (* The types for e1, e2 must be the same. The result is always a Bool. *)
     | Equal (e1, e2, pos) ->
