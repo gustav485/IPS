@@ -282,8 +282,15 @@ let rec evalExp (e : UntypedExp, vtab : VarTable, ftab : FunTable) : Value =
          the value of `a`; otherwise raise an error (containing
          a meaningful message).
   *)
-  | Replicate (_, _, _, _) ->
-        failwith "Unimplemented interpretation of replicate"
+  | Replicate (n_exp, a_exp, _, pos) ->
+      let n_val = evalExp (n_exp, vtab, ftab)
+      let a_val = evalExp (a_exp, vtab, ftab)
+      match n_val with
+        | IntVal n ->
+            if n < 0 then
+                raise (MyError (sprintf "Negative array size in replicate: %i" n, pos))
+            ArrayVal (List.replicate n a_val, valueType a_val)
+        | _ -> reportWrongType "first argument of replicate" Int n_val pos
 
   (* TODO project task 2: `filter(p, arr)`
        pattern match the implementation of map:
@@ -293,15 +300,27 @@ let rec evalExp (e : UntypedExp, vtab : VarTable, ftab : FunTable) : Value =
          that the return value is a boolean at all);
        - create an `ArrayVal` from the (list) result of the previous step.
   *)
-  | Filter (_, _, _, _) ->
-        failwith "Unimplemented interpretation of filter"
+  | Filter (farg, arrexp, _, pos) ->
+        let arr  = evalExp(arrexp, vtab, ftab)
+        let farg_ret_type = rtpFunArg farg ftab pos
+        match arr with
+          | ArrayVal (lst,tp1) ->
+               let mlst = List.filter (fun x -> evalFunArg (farg, vtab, ftab, pos, [x])) lst
+               ArrayVal (mlst, farg_ret_type)
+          | otherwise -> reportNonArray "2nd argument of \"filter\"" arr pos
 
   (* TODO project task 2: `scan(f, ne, arr)`
      Implementation similar to reduce, except that it produces an array
      of the same type and length to the input array `arr`.
   *)
-  | Scan (_, _, _, _, _) ->
-        failwith "Unimplemented interpretation of scan"
+  | Scan (farg, ne, arrexp, _, pos) ->
+        let farg_ret_type = rtpFunArg farg ftab pos
+        let arr  = evalExp(arrexp, vtab, ftab)
+        let nel  = evalExp(ne, vtab, ftab)
+        match arr with
+          | ArrayVal (lst,tp1) ->
+               List.fold (fun acc x -> evalFunArg (farg, vtab, ftab, pos, [acc;x])) nel lst
+          | otherwise -> reportNonArray "3rd argument of \"scan\"" arr pos
 
   | Read (t,p) ->
         let str = Console.ReadLine()
