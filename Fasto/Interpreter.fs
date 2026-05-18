@@ -147,65 +147,54 @@ let rec evalExp (e : UntypedExp, vtab : VarTable, ftab : FunTable) : Value =
               evaluates to false.
   *)
   | Times(e1, e2, pos) ->
-      let res1 = evalExp(e1, vtab, ftab)
-      let res2 = evalExp(e2, vtab, ftab)
-      match (res1, res2) with 
-        | (IntVal n1, IntVal n2) -> IntVal (n1 * n2)
-        | (IntVal _, _) -> reportWrongType "right operand of *" Int res2 (expPos e2)
-        | (_, _) -> reportWrongType "left operand of *" Int res1 (expPos e1)
-
+        let res1   = evalExp(e1, vtab, ftab)
+        let res2   = evalExp(e2, vtab, ftab)
+        match res1, res2 with
+          | IntVal n1, IntVal n2 -> IntVal (n1 * n2)
+          | IntVal _, _ -> reportWrongType "right operand of *" Int res2 (expPos e2)
+          | _, _ -> reportWrongType "left operand of *" Int res1 (expPos e1)
   | Divide(e1, e2, pos) ->
+        let res1   = evalExp(e1, vtab, ftab)
+        let res2   = evalExp(e2, vtab, ftab)
+        match res1, res2 with
+          | IntVal n1, IntVal 0 -> raise (MyError ("Division with zero", pos))
+          | IntVal n1, IntVal n2 -> IntVal (n1 / n2)
+          | IntVal _, _ -> reportWrongType "right operand of /" Int res2 (expPos e2)
+          | _, _ -> reportWrongType "left operand of /" Int res1 (expPos e1)
+   | And (e1, e2, pos) ->
       let res1 = evalExp(e1, vtab, ftab)
-      let res2 = evalExp(e2, vtab, ftab)
-      match (res1, res2) with
-        | (IntVal n1, IntVal n2) -> 
-            if n2 = 0 then 
-                raise (MyError("Can't divide by zero", pos))
-            else 
-                IntVal (n1 / n2)
-        | (IntVal _, _) -> reportWrongType "right operand of /" Int res2 (expPos e2)
-        | (_, _) -> reportWrongType "left operand of /" Int res1 (expPos e1)
-
-  | And (e1, e2, pos) ->
-      let res1 = evalExp(e1, vtab, ftab)
-      match (res1) with
-        | (BoolVal n1) -> 
-            if not n1 then
-                  reportError "First case of && is evaluated as false"
-            else
-                  let res2 = evalExp(e2, vtab, ftab)
-                  match (res2) with
-                    | (BoolVal n2) -> BoolVal (n1 && n2)
-                    | _ -> reportWrongType "left operand of &&" Bool res1 (expPos e1)
-        | (BoolVal _, _) -> reportWrongType "right operand of && is evaluated as false" Bool res2 (expPos e2)
-        | (_, _) -> reportWrongType "left operand of && is evaluated as false" Bool res1 (expPos e1)
+      match res1 with
+            | BoolVal false -> BoolVal false      
+            | BoolVal true  ->
+            let res2 = evalExp(e2, vtab, ftab)
+            match res2 with
+                  | BoolVal b2 -> BoolVal b2
+                  | _          -> reportWrongType "right operand of &&" Bool res2 (expPos e2)
+            | _ -> reportWrongType "left operand of &&" Bool res1 (expPos e1)
 
   | Or (e1, e2, pos) ->
       let res1 = evalExp(e1, vtab, ftab)
-      match (res1) with
-        | (BoolVal n1) -> BoolVal (n1 || n2)
-        | (BoolVal _, _) -> BoolVal (n1 || n2)
-      let res2 = evalExp(e2, vtab, ftab)
-      match (res2) with
-        | (BoolVal _) -> BoolVal (n1 || n2)
-        | (_) -> reportWrongType "Left and righ operand of || is evaluated as false" Bool res1 Bool res2 (expPos e1, expPos e2)
+      match res1 with
+            | BoolVal true -> BoolVal true
+            | BoolVal false ->
+            let res2 = evalExp(e2, vtab, ftab)
+            match res2 with
+                  | BoolVal b -> BoolVal b
+                  | _ -> reportWrongType "right operand of ||" Bool res2 (expPos e2)
+            | _ -> reportWrongType "left operand of ||" Bool res1 (expPos e1)
 
-  | Not(e1, pos) -> 
+  | Not(e1, pos) ->
       let res1 = evalExp(e1, vtab, ftab)
-      match (res1) with 
-        | (BoolVal, _) -> 
-            if e1 == BoolVal then
-                  e1 = false
-            else 
-                  e1 = true
-        | (_, _) -> reportWrongType "Argument is not of type bool" Bool res1 (expPos e1)
+      match res1 with 
+        | BoolVal true -> BoolVal false
+        | BoolVal false -> BoolVal true
+        | _ -> reportWrongType "Argument is not of type bool" Bool res1 (expPos e1)
 
   | Negate(e1, pos) ->
       let res1 = evalExp(e1, vtab, ftab)
-      match (res1) with 
-        | (IntVal n) -> IntVal (-n)
-        | (_, _) -> reportWrongType "Argument is not of type int" Int res1 (expPos e1)
-
+      match res1 with 
+        | IntVal n -> IntVal (-n)
+        | _ -> reportWrongType "Argument is not of type int" Int res1 (expPos e1)
 
   | Equal(e1, e2, pos) ->
         let r1 = evalExp(e1, vtab, ftab)

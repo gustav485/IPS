@@ -245,17 +245,39 @@ let rec compileExp  (e      : TypedExp)
      version, but remember to come back and clean it up later.
      `Not` and `Negate` are simpler; you can use `XORI` for `Not`
   *)
-  | Times (_, _, _) ->
-      failwith "Unimplemented code generation of multiplication"
+  | Times (e1, e2, pos) ->
+      let t1 = newReg "times_L"
+      let t2 = newReg "times_R"
+      let code1 = compileExp e1 vtable t1
+      let code2 = compileExp e2 vtable t2
+      code1 @ code2 @ [MUL (place,t1,t2)]
 
-  | Divide (_, _, _) ->
-      failwith "Unimplemented code generation of division"
+  | Divide (e1, e2, pos) ->
+      let t1 = newReg "divide_L"
+      let t2 = newReg "divide_R"
+      let code1 = compileExp e1 vtable t1
+      let code2 = compileExp e2 vtable t2
+      let errorLabel  = newLab "divByZero"
+      let safeLabel = newLab "divSafe"
+      code1 @ code2 @       
+      [ BNE (t2, Rzero, safeLabel)
+      ; LABEL errorLabel
+      ; LI (Ra0, fst pos)
+      ; LA (Ra1, "m.DivisionByZero")
+      ; J "p.RuntimeError"
+      ; LABEL safeLabel
+      ; DIV (place, t1, t2)
+      ]
 
-  | Not (_, _) ->
-      failwith "Unimplemented code generation of not"
+  | Not (e1, pos) ->
+      let t1 = newReg "not"
+      let code1 = compileExp e1 vtable t1
+      code1 @ [XORI (place, t1, 1)]
 
-  | Negate (_, _) ->
-      failwith "Unimplemented code generation of negate"
+  | Negate (e1, pos) ->
+      let t = newReg "neg_arg"
+      let code1 = compileExp e1 vtable t
+      code1 @ [SUB (place, Rzero, t)]
 
   | Let (dec, e1, pos) ->
       let (code1, vtable1) = compileDec dec vtable
