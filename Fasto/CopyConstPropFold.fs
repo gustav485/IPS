@@ -28,13 +28,19 @@ let rec copyConstPropFoldExp (vtable : VarTable)
                 exists and if so, it should replace the current expression
                 with the variable or constant to be propagated.
             *)
-            failwith "Unimplemented copyConstPropFold for Var"
+            match lookup name vtab with
+                | Some exp -> exp
+                | None -> Var (name, pos)
+                
         | Index (name, ei, t, pos) ->
             (* TODO project task 3:
                 Should probably do the same as the `Var` case, for
                 the array name, and optimize the index expression `ei` as well.
             *)
-            failwith "Unimplemented copyConstPropFold for Index"
+            let ei' = copyConstPropFoldExp(vtable, ei)
+            match SymTab.lookup name vtable with
+                | Some (VarProp new_name) -> Index (new_name, ei', t, pos)
+                | _ -> Index (name, ei', t, pos)
         | Let (Dec (name, ed, decpos), body, pos) ->
             let ed' = copyConstPropFoldExp vtable ed
             match ed' with
@@ -76,14 +82,21 @@ let rec copyConstPropFoldExp (vtable : VarTable)
                          to some fresh identifier, to avoid inadvertently
                          shadowing any bindings using `name` in vtable? *)
 
-        | Times (_, _, _) ->
+        | Times (e1, e2, pos) ->
             (* TODO project task 3: implement as many safe algebraic
                simplifications as you can think of. You may inspire
                yourself from the case of `Plus`. For example:
                      1 * x = ?
                      x * 0 = ?
             *)
-            failwith "Unimplemented copyConstPropFold for multiplication"
+            let e1' = copyConstPropFoldExp vtable e1
+            let e2' = copyConstPropFoldExp vtable e2
+            match e1' e2' with
+                | (Constant (IntVal 0, _), 0) -> res = 0
+                | (_, Constant(IntVal 0)) -> res = 0
+                | (Constant(IntVal 1, e2')) -> res = e2
+                | (e1', Constant(IntVal 1)) -> res = e2
+            //failwith "Unimplemented copyConstPropFold for multiplication"
         | And (e1, e2, pos) ->
             (* TODO project task 3: see above. You may inspire yourself from
                `Or` below, but that only scratches the surface of what's possible *)
