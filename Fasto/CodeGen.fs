@@ -635,8 +635,59 @@ let rec compileExp  (e      : TypedExp)
          counter computed in step (c). You do this of course with a
          `SW(counter_reg, place, 0)` instruction.
   *)
-  | Filter (_, _, _, _) ->
-      failwith "Unimplemented code generation of filter"
+  | Filter (farg, arr_exp, elem_type, pos) ->
+      let size_reg = newReg "size" (* size of input/output array *)
+      let arr_reg  = newReg "arr"  (* address of array *)
+      let elem_reg = newReg "elem" (* address of current element *)
+      let res_reg = newReg "res"
+      let bool_reg = newReg "bool"
+      let skip = newLab "skip"
+      let counter_reg = newReg "counter"
+      let arr_code = compileExp arr_exp vtable arr_reg
+
+      let get_size = [ LW (size_reg, arr_reg, 0) ]
+
+      let addr_reg = newReg "addrg" (* address of element in new array *)
+      let i_reg = newReg "i"
+      let init_regs = [ ADDI (addr_reg, place, 4)
+                      ; MV (i_reg, Rzero)
+                      ; ADDI (elem_reg, arr_reg, 4)
+                      ; MV (counter_reg, Rzero)
+                      ]
+      let loop_beg = newLab "loop_beg"
+      let loop_end = newLab "loop_end"
+      let loop_header = [ LABEL (loop_beg)
+                        ; BGE (i_reg, size_reg, loop_end)
+                        ]
+
+      let src_size = getElemSize elem_type
+      let loop_filter =
+             [ Load src_size (res_reg, elem_reg, 0)
+             ; ADDI (elem_reg, elem_reg, elemSizeToInt src_size)
+             ]
+             @ applyFunArg(farg, [res_reg], vtable, bool_reg, pos)
+             @
+             [ BEQ (bool_reg, Rzero, skip)
+             ; Store src_size (res_reg, addr_reg, 0)
+             ; ADDI (addr_reg, addr_reg, elemSizeToInt src_size)
+             ; ADDI (counter_reg, counter_reg, 1)
+             ; LABEL skip
+             ]
+
+      let loop_footer =
+              [ ADDI (i_reg, i_reg, 1)
+              ; J loop_beg
+              ; LABEL loop_end
+              ; SW (counter_reg, place, 0)
+              ]
+      arr_code
+       @ get_size
+       @ dynalloc (size_reg, place, elem_type)
+       @ init_regs
+       @ loop_header
+       @ loop_filter
+       @ loop_footer
+      //failwith "Unimplemented code generation of filter"
 
   (* TODO project task 2: see also the comment to replicate.
      `scan(f, ne, arr)`: you can inspire yourself from the implementation of
