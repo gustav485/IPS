@@ -301,13 +301,19 @@ let rec evalExp (e : UntypedExp, vtab : VarTable, ftab : FunTable) : Value =
        - create an `ArrayVal` from the (list) result of the previous step.
   *)
   | Filter (farg, arrexp, _, pos) ->
-        let arr  = evalExp(arrexp, vtab, ftab)
-        let farg_ret_type = rtpFunArg farg ftab pos
-        match arr with
-          | ArrayVal (lst,tp1) ->
-               let mlst = List.filter (fun x -> evalFunArg (farg, vtab, ftab, pos, [x])) lst
-               ArrayVal (mlst, farg_ret_type)
-          | otherwise -> reportNonArray "2nd argument of \"filter\"" arr pos
+      let arr  = evalExp(arrexp, vtab, ftab)
+      let farg_ret_type = rtpFunArg farg ftab pos
+      match arr with
+        | ArrayVal (lst,tp1) ->
+            let mlst =
+                List.filter
+                    (fun x ->
+                        match evalFunArg (farg, vtab, ftab, pos, [x]) with
+                        | BoolVal b -> b
+                        | _ -> failwith "filter predicate did not return bool"
+                    ) lst
+            ArrayVal (mlst, farg_ret_type)
+        | otherwise -> reportNonArray "2nd argument of \"filter\"" arr pos
 
   (* TODO project task 2: `scan(f, ne, arr)`
      Implementation similar to reduce, except that it produces an array
