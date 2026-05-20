@@ -574,7 +574,7 @@ let rec compileExp  (e      : TypedExp)
       let size_reg = newReg "size"
       let arg_reg = newReg "argument"
       let n_code = compileExp n_exp vtable size_reg
-      let a_code = compileExp a_arg vtable arg_reg
+      let a_code = compileExp a_exp vtable arg_reg
       (* size_reg is now the integer n. *)
 
       (* Check that array size N >= 0:
@@ -605,7 +605,6 @@ let rec compileExp  (e      : TypedExp)
                         ; BGE (i_reg, size_reg, loop_end)
                         ]
 
-      (* iota is just 'arr[i] = i'.  arr[i] is addr_reg. *)
       let loop_replicate   = [ SW (arg_reg, addr_reg, 0) ]
       let loop_footer = [ ADDI (addr_reg, addr_reg, 4)
                         ; ADDI (i_reg, i_reg, 1)
@@ -620,8 +619,6 @@ let rec compileExp  (e      : TypedExp)
        @ loop_header
        @ loop_replicate
        @ loop_footer
-
-      //failwith "Unimplemented code generation of replicate"
 
   (* TODO project task 2: see also the comment to replicate.
      (a) `filter(f, arr)`:  has some similarity with the implementation of map.
