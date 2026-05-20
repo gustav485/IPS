@@ -310,7 +310,7 @@ let rec evalExp (e : UntypedExp, vtab : VarTable, ftab : FunTable) : Value =
                     (fun x ->
                         match evalFunArg (farg, vtab, ftab, pos, [x]) with
                         | BoolVal b -> b
-                        | _ -> failwith "filter predicate did not return bool"
+                        | _ -> failwith "filter did not return bool"
                     ) lst
             ArrayVal (mlst, farg_ret_type)
         | otherwise -> reportNonArray "2nd argument of \"filter\"" arr pos
