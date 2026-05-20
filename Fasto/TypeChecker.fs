@@ -304,7 +304,7 @@ and checkExp  (ftab : FunTable)
     *)
     | Replicate (n_exp, a_exp, _, pos) ->
         let  (n_type, n_exp_dec) = checkExp ftab vtab n_exp
-        if named_type <> Int then
+        if n_type <> Int then
           reportTypeWrong "argument of iota" Int n_type pos
         let  (a_type, a_exp_dec) = checkExp ftab vtab a_exp
         (Array a_type, Replicate (n_exp_dec, a_exp_dec, a_type, pos))
@@ -318,7 +318,7 @@ and checkExp  (ftab : FunTable)
             - `arr` should be of type `[ta]`
             - the result of filter should have type `[ta]`
     *)
-    | Filter (f, arr_exp, _, _, pos) ->
+    | Filter (f, arr_exp, _, pos) ->
         let (arr_type, arr_exp_dec) = checkExp ftab vtab arr_exp
         let elem_type =
             match arr_type with
@@ -332,9 +332,9 @@ and checkExp  (ftab : FunTable)
         if elem_type <> f_arg_type then
           reportTypesDifferent "Function-argument and array-element types in filter"
                                f_arg_type elem_type pos
-        if f_res <> Bool then
-          reportTypeWrong "return type of filter predicate" Bool f_res pos
-        (Array f_res_type, Filter (f', arr_exp_dec, elem_type, f_res_type, pos))
+        if f_res_type <> Bool then
+          reportTypeWrong "return type of filter predicate" Bool f_res_type pos
+        (Array f_res_type, Filter (f', arr_exp_dec, elem_type, pos))
 
     (* TODO project task 2: `scan(f, ne, arr)`
         Hint: Implementation is very similar to `reduce(f, ne, arr)`.
