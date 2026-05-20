@@ -611,8 +611,8 @@ let rec compileExp  (e      : TypedExp)
                         ; J loop_beg
                         ; LABEL loop_end
                         ]
-      n_code
-      a_code
+         n_code
+       @ a_code
        @ checksize
        @ dynalloc (size_reg, place, Int)
        @ init_regs
@@ -687,7 +687,6 @@ let rec compileExp  (e      : TypedExp)
        @ loop_header
        @ loop_filter
        @ loop_footer
-      //failwith "Unimplemented code generation of filter"
 
   (* TODO project task 2: see also the comment to replicate.
      `scan(f, ne, arr)`: you can inspire yourself from the implementation of
@@ -696,8 +695,57 @@ let rec compileExp  (e      : TypedExp)
         the current location of the result iterator at every iteration of
         the loop.
   *)
-  | Scan (_, _, _, _, _) ->
-      failwith "Unimplemented code generation of scan"
+  | Scan (binop, acc_exp, arr_exp, elem_type, pos) ->
+      let arr_reg  = newReg "arr"   (* address of array *)
+      let size_reg = newReg "size"  (* size of input array *)
+      let i_reg    = newReg "ind_var"   (* loop counter *)
+      let tmp_reg  = newReg "tmp"   (* several purposes *)
+      let addr_reg = newReg "newArr"
+      let acc_reg  = newReg "acc"
+      let loop_beg = newLab "loop_beg"
+      let loop_end = newLab "loop_end"
+
+      let arr_code = compileExp arr_exp vtable arr_reg
+      let header1 = [ LW(size_reg, arr_reg, 0) ]
+
+      (* Compile initial value into place (will be updated below) *)
+      let acc_code = compileExp acc_exp vtable acc_reg
+
+      (* Set arr_reg to address of first element instead. *)
+      (* Set i_reg to 0. While i < size_reg, loop. *)
+      let loop_code =
+              [ ADDI (arr_reg, arr_reg, 4)
+              ; ADDI (addr_reg, place, 4)
+              ; MV (i_reg, Rzero)
+              ; LABEL (loop_beg)
+              ; BGE (i_reg, size_reg, loop_end)
+              ]
+      (* Load arr[i] into tmp_reg *)
+      let elem_size = getElemSize elem_type
+      let load_code =
+        [ Load elem_size (tmp_reg, arr_reg, 0)
+        ; ADDI (arr_reg, arr_reg, elemSizeToInt elem_size)
+        ]
+      (* place := binop(place, tmp_reg) *)
+      let apply_code =
+            applyFunArg(binop, [acc_reg; tmp_reg], vtable, acc_reg, pos)
+            @ [ Store elem_size (acc_reg, addr_reg, 0)
+              ; ADDI (addr_reg, addr_reg, elemSizeToInt elem_size)
+              ]
+
+      arr_code 
+      @ header1 
+      @ dynalloc (size_reg, place, elem_type)
+      @ acc_code 
+      @ loop_code 
+      @ load_code 
+      @ apply_code 
+      @
+         [ ADDI(i_reg, i_reg, 1)
+         ; J loop_beg
+         ; LABEL loop_end
+         ]
+      //failwith "Unimplemented code generation of scan"
 
 and applyFunArg ( ff     : TypedFunArg
                 , args   : reg list
