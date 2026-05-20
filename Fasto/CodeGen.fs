@@ -570,8 +570,58 @@ let rec compileExp  (e      : TypedExp)
         If `n` is less than `0` then remember to terminate the program with
         an error -- see implementation of `iota`.
   *)
-  | Replicate (_, _, _, _) ->
-      failwith "Unimplemented code generation of replicate"
+  | Replicate (n_exp, a_exp, _, (line, _)) ->
+      let size_reg = newReg "size"
+      let arg_reg = newReg "argument"
+      let n_code = compileExp n_exp vtable size_reg
+      let a_code = compileExp a_arg vtable arg_reg
+      (* size_reg is now the integer n. *)
+
+      (* Check that array size N >= 0:
+         if N >= 0 then jumpto safe_lab
+         jumpto "_IllegalArrSizeError_"
+         safe_lab: ...
+      *)
+      let safe_lab = newLab "safe"
+      let checksize = [ BGE (size_reg, Rzero, safe_lab)
+                      ; LI (Ra0, line)
+                      ; LA (Ra1, "m.BadSize")
+                      ; J "p.RuntimeError"
+                      ; LABEL (safe_lab)
+                      ]
+      
+      let addr_reg = newReg "addr"
+      let i_reg = newReg "i"
+      let init_regs = [ ADDI (addr_reg, place, 4)
+                      ; MV (i_reg, Rzero) ]
+      
+      (* addr_reg is now the position of the first array element. *)
+
+      (* Run a loop.  Keep jumping back to loop_beg until it is not the
+         case that i_reg < size_reg, and then jump to loop_end. *)
+      let loop_beg = newLab "loop_beg"
+      let loop_end = newLab "loop_end"
+      let loop_header = [ LABEL (loop_beg)
+                        ; BGE (i_reg, size_reg, loop_end)
+                        ]
+
+      (* iota is just 'arr[i] = i'.  arr[i] is addr_reg. *)
+      let loop_replicate   = [ SW (arg_reg, addr_reg, 0) ]
+      let loop_footer = [ ADDI (addr_reg, addr_reg, 4)
+                        ; ADDI (i_reg, i_reg, 1)
+                        ; J loop_beg
+                        ; LABEL loop_end
+                        ]
+      n_code
+      a_code
+       @ checksize
+       @ dynalloc (size_reg, place, Int)
+       @ init_regs
+       @ loop_header
+       @ loop_replicate
+       @ loop_footer
+
+      //failwith "Unimplemented code generation of replicate"
 
   (* TODO project task 2: see also the comment to replicate.
      (a) `filter(f, arr)`:  has some similarity with the implementation of map.
