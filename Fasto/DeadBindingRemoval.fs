@@ -68,7 +68,11 @@ let rec removeDeadBindingsInExp (e : TypedExp) : (bool * DBRtab * TypedExp) =
                         you need to record it in a new symbol table.
                   - 3rd element of the tuple: should be the optimised expression.
             *)
-            failwith "Unimplemented removeDeadBindingsInExp for Var"
+
+            let uses = recordUse name (SymTab.empty ())
+            (false, uses, Var(name, pos))
+            //failwith "Unimplemented removeDeadBindingsInExp for Var"
+
         | Plus (x, y, pos) ->
             let (xios, xuses, x') = removeDeadBindingsInExp x
             let (yios, yuses, y') = removeDeadBindingsInExp y
@@ -118,7 +122,11 @@ let rec removeDeadBindingsInExp (e : TypedExp) : (bool * DBRtab * TypedExp) =
                         expression `ei` and to propagate its results (in addition
                         to recording the use of `name`).
             *)
-            failwith "Unimplemented removeDeadBindingsInExp for Index"
+
+            let uses = recordUse name (SymTab.empty ())
+            let (eio, euses, e') = removeDeadBindingsInExp e
+            (eio, SymTab.combine uses euses, Index(name, e', t, pos))
+            //failwith "Unimplemented removeDeadBindingsInExp for Index"
 
         | Let (Dec (name, def, decpos), body, pos) ->
             (* Task 3, Hints for the `Let` case:
@@ -144,7 +152,24 @@ let rec removeDeadBindingsInExp (e : TypedExp) : (bool * DBRtab * TypedExp) =
                     Let-expression.
 
             *)
-            failwith "Unimplemented removeDeadBindingsInExp for Let"
+
+            //Recursively optimize the body
+            let (io_body, uses_body, body') = removeDeadBindingsInExp body
+
+            //Recursively optimize the expression `e`
+            let (io_def, uses_def, def') = removeDeadBindingsInExp def
+
+            //Check if `name` is used in body and if `e` contains I/O operations
+            let is_name_used = isUsed name uses_body
+
+            if is_name_used || io_def then
+                let total_io = io_def || io_body
+                let total_uses = SymTab.combine uses_def (SymTab.remove name uses_body)
+                (total_io, total_uses, Let (Dec (name, def', decpos), body', pos))
+            else
+            (io_body, uses_body, body')
+            //failwith "Unimplemented removeDeadBindingsInExp for Let"
+
         | Iota (en, pos) ->
             let (io, uses, en') = removeDeadBindingsInExp en
             (io,
