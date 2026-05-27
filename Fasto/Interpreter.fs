@@ -312,7 +312,7 @@ let rec evalExp (e : UntypedExp, vtab : VarTable, ftab : FunTable) : Value =
                         | BoolVal b -> b
                         | _ -> failwith "filter did not return bool"
                     ) lst
-            ArrayVal (mlst, farg_ret_type)
+            ArrayVal (mlst, tp1)
         | otherwise -> reportNonArray "2nd argument of \"filter\"" arr pos
 
   (* TODO project task 2: `scan(f, ne, arr)`
@@ -325,7 +325,12 @@ let rec evalExp (e : UntypedExp, vtab : VarTable, ftab : FunTable) : Value =
         let nel  = evalExp(ne, vtab, ftab)
         match arr with
           | ArrayVal (lst,tp1) ->
-               List.fold (fun acc x -> evalFunArg (farg, vtab, ftab, pos, [acc;x])) nel lst
+              ArrayVal (
+                snd (
+                  List.fold
+                    (fun (acc, res) x ->
+                        let acc' = evalFunArg (farg, vtab, ftab, pos, [acc; x])
+                        (acc', res @ [acc'])) (nel, [])lst),tp1)
           | otherwise -> reportNonArray "3rd argument of \"scan\"" arr pos
 
   | Read (t,p) ->
