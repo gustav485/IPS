@@ -124,7 +124,7 @@ let rec removeDeadBindingsInExp (e : TypedExp) : (bool * DBRtab * TypedExp) =
             *)
 
             let uses = recordUse name (SymTab.empty ())
-            let (eio, euses, e') = removeDeadBindingsInExp e
+            let (eio, euses, e') = removeDeadBindingsInExp ei
             (eio, SymTab.combine uses euses, Index(name, e', t, pos))
             //failwith "Unimplemented removeDeadBindingsInExp for Index"
 
