@@ -611,9 +611,10 @@ let rec compileExp  (e      : TypedExp)
                         ; J loop_beg
                         ; LABEL loop_end
                         ]
-         n_code
-       @ a_code
+                        
+      n_code
        @ checksize
+       @ a_code
        @ dynalloc (size_reg, place, Int)
        @ init_regs
        @ loop_header
