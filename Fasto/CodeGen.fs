@@ -263,7 +263,7 @@ let rec compileExp  (e      : TypedExp)
       [ BNE (t2, Rzero, safeLabel)
       ; LABEL errorLabel
       ; LI (Ra0, fst pos)
-      ; LA (Ra1, "m.DivisionByZero")
+      ; LA (Ra1, "m.DivZero")
       ; J "p.RuntimeError"
       ; LABEL safeLabel
       ; DIV (place, t1, t2)

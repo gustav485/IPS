@@ -334,7 +334,7 @@ and checkExp  (ftab : FunTable)
                                f_arg_type elem_type pos
         if f_res_type <> Bool then
           reportTypeWrong "return type of filter predicate" Bool f_res_type pos
-        (Array f_res_type, Filter (f', arr_exp_dec, elem_type, pos))
+        (Array elem_type, Filter (f', arr_exp_dec, elem_type, pos))
 
     (* TODO project task 2: `scan(f, ne, arr)`
         Hint: Implementation is very similar to `reduce(f, ne, arr)`.
@@ -367,7 +367,7 @@ and checkExp  (ftab : FunTable)
         if e_type <> f_argres_type then
           reportTypesDifferent "operation and start-element types in scan"
                                f_argres_type e_type pos
-        (Array f_argres_type, Reduce (f', e_dec, arr_dec, elem_type, pos))
+        (Array f_argres_type, Scan (f', e_dec, arr_dec, elem_type, pos))
 
 and checkFunArg  (ftab : FunTable)
                  (vtab : VarTable)
