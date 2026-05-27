@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<linker>
+  <assembly fullname="Fasto">
+    <resource name="FSharpSignatureData.Fasto" action="remove"></resource>
+    <resource name="FSharpSignatureCompressedData.Fasto" action="remove"></resource>
+    <resource name="FSharpSignatureDataB.Fasto" action="remove"></resource>
+    <resource name="FSharpSignatureCompressedDataB.Fasto" action="remove"></resource>
+    <resource name="FSharpOptimizationData.Fasto" action="remove"></resource>
+    <resource name="FSharpOptimizationCompressedData.Fasto" action="remove"></resource>
+    <resource name="FSharpOptimizationDataB.Fasto" action="remove"></resource>
+    <resource name="FSharpOptimizationCompressedDataB.Fasto" action="remove"></resource>
+    <resource name="FSharpOptimizationInfo.Fasto" action="remove"></resource>
+    <resource name="FSharpSignatureInfo.Fasto" action="remove"></resource>
+  </assembly>
+</linker>
