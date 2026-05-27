@@ -607,13 +607,7 @@ let rec compileExp  (e      : TypedExp)
       let arg_reg = newReg "argument"
       let n_code = compileExp n_exp vtable size_reg
       let a_code = compileExp a_exp vtable arg_reg
-      (* size_reg is now the integer n. *)
 
-      (* Check that array size N >= 0:
-         if N >= 0 then jumpto safe_lab
-         jumpto "_IllegalArrSizeError_"
-         safe_lab: ...
-      *)
       let safe_lab = newLab "safe"
       let checksize = [ BGE (size_reg, Rzero, safe_lab)
                       ; LI (Ra0, line)
@@ -627,10 +621,6 @@ let rec compileExp  (e      : TypedExp)
       let init_regs = [ ADDI (addr_reg, place, 4)
                       ; MV (i_reg, Rzero) ]
       
-      (* addr_reg is now the position of the first array element. *)
-
-      (* Run a loop.  Keep jumping back to loop_beg until it is not the
-         case that i_reg < size_reg, and then jump to loop_end. *)
       let loop_beg = newLab "loop_beg"
       let loop_end = newLab "loop_end"
       let loop_header = [ LABEL (loop_beg)
@@ -669,9 +659,9 @@ let rec compileExp  (e      : TypedExp)
          `SW(counter_reg, place, 0)` instruction.
   *)
   | Filter (farg, arr_exp, elem_type, pos) ->
-      let size_reg = newReg "size" (* size of input/output array *)
-      let arr_reg  = newReg "arr"  (* address of array *)
-      let elem_reg = newReg "elem" (* address of current element *)
+      let size_reg = newReg "size"
+      let arr_reg  = newReg "arr"
+      let elem_reg = newReg "elem"
       let res_reg = newReg "res"
       let bool_reg = newReg "bool"
       let skip = newLab "skip"
@@ -680,7 +670,7 @@ let rec compileExp  (e      : TypedExp)
 
       let get_size = [ LW (size_reg, arr_reg, 0) ]
 
-      let addr_reg = newReg "addrg" (* address of element in new array *)
+      let addr_reg = newReg "addrg"
       let i_reg = newReg "i"
       let init_regs = [ ADDI (addr_reg, place, 4)
                       ; MV (i_reg, Rzero)
@@ -729,10 +719,10 @@ let rec compileExp  (e      : TypedExp)
         the loop.
   *)
   | Scan (binop, acc_exp, arr_exp, elem_type, pos) ->
-      let arr_reg  = newReg "arr"   (* address of array *)
-      let size_reg = newReg "size"  (* size of input array *)
-      let i_reg    = newReg "ind_var"   (* loop counter *)
-      let tmp_reg  = newReg "tmp"   (* several purposes *)
+      let arr_reg  = newReg "arr"
+      let size_reg = newReg "size"
+      let i_reg    = newReg "ind_var"
+      let tmp_reg  = newReg "tmp"
       let addr_reg = newReg "newArr"
       let acc_reg  = newReg "acc"
       let loop_beg = newLab "loop_beg"
@@ -741,11 +731,8 @@ let rec compileExp  (e      : TypedExp)
       let arr_code = compileExp arr_exp vtable arr_reg
       let header1 = [ LW(size_reg, arr_reg, 0) ]
 
-      (* Compile initial value into place (will be updated below) *)
       let acc_code = compileExp acc_exp vtable acc_reg
 
-      (* Set arr_reg to address of first element instead. *)
-      (* Set i_reg to 0. While i < size_reg, loop. *)
       let loop_code =
               [ ADDI (arr_reg, arr_reg, 4)
               ; ADDI (addr_reg, place, 4)
@@ -753,13 +740,12 @@ let rec compileExp  (e      : TypedExp)
               ; LABEL (loop_beg)
               ; BGE (i_reg, size_reg, loop_end)
               ]
-      (* Load arr[i] into tmp_reg *)
       let elem_size = getElemSize elem_type
       let load_code =
         [ Load elem_size (tmp_reg, arr_reg, 0)
         ; ADDI (arr_reg, arr_reg, elemSizeToInt elem_size)
         ]
-      (* place := binop(place, tmp_reg) *)
+
       let apply_code =
             applyFunArg(binop, [acc_reg; tmp_reg], vtable, acc_reg, pos)
             @ [ Store elem_size (acc_reg, addr_reg, 0)
@@ -778,7 +764,6 @@ let rec compileExp  (e      : TypedExp)
          ; J loop_beg
          ; LABEL loop_end
          ]
-      //failwith "Unimplemented code generation of scan"
 
 and applyFunArg ( ff     : TypedFunArg
                 , args   : reg list
