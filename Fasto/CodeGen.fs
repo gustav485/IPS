@@ -171,7 +171,7 @@ let rec compileExp  (e      : TypedExp)
                            instruction sequence for any value n *)
   | Constant (BoolVal p, _) ->
       (* TODO project task 1: represent `true`/`false` values as `1`/`0` *)
-      failwith "Unimplemented code generation for boolean constants"
+      [ LI(place, (if p then 1 else 0)) ]
   | Constant (CharVal c, pos) ->
       [ LI (place, int c) ]
 
@@ -368,11 +368,43 @@ let rec compileExp  (e      : TypedExp)
         in `e1 || e2` if the execution of `e1` will evaluate to `true` then
         the code of `e2` must not be executed. Similarly for `And` (&&).
   *)
-  | And (_, _, _) ->
-      failwith "Unimplemented code generation of &&"
+  | And (e1, e2, pos) ->
+        let t1: reg = newReg "and_L"
+        let t2: reg = newReg "and_R"
 
-  | Or (_, _, _) ->
-      failwith "Unimplemented code generation of ||"
+        let code1: Instruction list = compileExp e1 vtable t1
+        let code2: Instruction list = compileExp e2 vtable t2
+
+        let falseLabel: string = newLab "and_false"
+        let endLabel: string = newLab "and_end"
+
+        code1
+        @ [ BEQ(t1, Rzero, falseLabel) ]
+        @ code2
+        @ [ BEQ(t2, Rzero, falseLabel)
+            LI(place, 1)
+            J endLabel
+            LABEL falseLabel
+            LI(place, 0)
+            LABEL endLabel ]
+
+  | Or (e1, e2, pos) ->
+        let t1: reg = newReg "and_L"
+        let t2: reg = newReg "and_R"
+        let code1: Instruction list = compileExp e1 vtable t1
+        let code2: Instruction list = compileExp e2 vtable t2
+        let trueLabel: string = newLab "or_true"
+        let endLabel: string = newLab "or_end"
+
+        code1
+        @ [ BNE(t1, Rzero, trueLabel) ]
+        @ code2
+        @ [ BNE(t2, Rzero, trueLabel)
+            LI(place, 0)
+            J endLabel
+            LABEL trueLabel
+            LI(place, 1)
+            LABEL endLabel ]
 
   (* Indexing:
      1. generate code to compute the index
