@@ -49,15 +49,8 @@ let rec copyConstPropFoldExp (vtable : VarTable)
             let ed' = copyConstPropFoldExp vtable ed
             match ed' with
                 | Var (id, pos) ->
-                    (* TODO project task 3:
-                        Hint: I have discovered a variable-copy statement `let x = a`.
-                              I should probably record it in the `vtable` by
-                              associating `x` with a variable-propagatee binding,
-                              and optimize the `body` of the let.
-                    *)
-                    let vtable' = SymTab.bind name (VarProp id) vtable
-                    let body' = copyConstPropFoldExp vtable' body
-                    Let(Dec(name, ed', decpos), body', pos)                    
+                    let body' = copyConstPropFoldExp (SymTab.remove name vtable) body
+                    Let(Dec(name, ed', decpos), body', pos)                  
                 | Constant (value, pos) ->
                     (* TODO project task 3:
                         Hint: I have discovered a constant-copy statement `let x = 5`.
@@ -70,31 +63,10 @@ let rec copyConstPropFoldExp (vtable : VarTable)
                     Let(Dec(name, ed', decpos), body', pos)
 
                 | Let(Dec(innerName, innerEd, innerDecPos), innerBody, innerPos) ->
-                    (* TODO project task 3:
-                        Hint: this has the structure
-                                `let y = (let x = e1 in e2) in e3`
-                        Problem is, in this form, `e2` may simplify
-                        to a variable or constant, but I will miss
-                        identifying the resulting variable/constant-copy
-                        statement on `y`.
-                        A potential solution is to optimize directly the
-                        restructured, semantically-equivalent expression:
-                                `let x = e1 in let y = e2 in e3`
-                        but beware that x might also occur in e3, in the
-                        original expression. What happens then?
-                    *)
-                    let innerBody' = copyConstPropFoldExp vtable innerBody
-                    let innerEd' = copyConstPropFoldExp vtable innerEd 
-                    let body' = copyConstPropFoldExp vtable body 
-
-                        
-                    let newBody = Let(Dec(name, innerBody', decpos), body', pos)
-
-                    let newLet = Let(Dec(innerName, innerEd', innerDecPos), newBody, innerPos)
-
-                    copyConstPropFoldExp vtable newLet
-                | _ -> (* Fallthrough - for everything else, do nothing *)
-                    let body' = copyConstPropFoldExp vtable body
+                    let body' = copyConstPropFoldExp (SymTab.remove name vtable) body
+                    Let(Dec(name, ed', decpos), body', pos)
+                | _ ->
+                    let body' = copyConstPropFoldExp (SymTab.remove name vtable) body
                     Let(Dec(name, ed', decpos), body', pos)
                       (* Or maybe rename the inner bound variable
                          to some fresh identifier, to avoid inadvertently
@@ -117,13 +89,13 @@ let rec copyConstPropFoldExp (vtable : VarTable)
                 | (_, Constant(IntVal 1, _)) -> e1'
                 | _ -> Times(e1', e2', pos)
         | And (e1, e2, pos) ->
-            (* TODO project task 3: see above. You may inspire yourself from
-               `Or` below, but that only scratches the surface of what's possible *)
             let e1' = copyConstPropFoldExp vtable e1
-            let e2' = copyConstPropFoldExp vtable e2
-            match (e1', e2') with
-                | (Constant(BoolVal a, _), Constant(BoolVal b, _)) -> Constant(BoolVal(a && b), pos)
-                | _ -> And(e1', e2', pos)
+            match e1' with
+            | Constant(BoolVal false, _) -> Constant(BoolVal false, pos)
+            | Constant(BoolVal true, _) ->
+                copyConstPropFoldExp vtable e2
+            | _ ->
+                And(e1', copyConstPropFoldExp vtable e2, pos)
 
         | Constant (x,pos) -> Constant (x,pos)
         | StringLit (x,pos) -> StringLit (x,pos)
@@ -215,11 +187,12 @@ let rec copyConstPropFoldExp (vtable : VarTable)
             | _ -> Divide (e1', e2', pos)
         | Or (e1, e2, pos) ->
             let e1' = copyConstPropFoldExp vtable e1
-            let e2' = copyConstPropFoldExp vtable e2
-            match (e1', e2') with
-                | (Constant (BoolVal a, _), Constant (BoolVal b, _)) ->
-                    Constant (BoolVal (a || b), pos)
-                | _ -> Or (e1', e2', pos)
+            match e1' with
+            | Constant(BoolVal true, _) -> Constant(BoolVal true, pos)
+            | Constant(BoolVal false, _) ->
+                copyConstPropFoldExp vtable e2
+            | _ ->
+                Or(e1', copyConstPropFoldExp vtable e2, pos)
         | Not (e0, pos) ->
             let e0' = copyConstPropFoldExp vtable e0
             match e0' with
