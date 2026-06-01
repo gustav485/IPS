@@ -1,0 +1,5 @@
+fun int main() = 
+  let x = read(int) in
+  let y = 5 in
+  let result = x * y in
+  write(result)

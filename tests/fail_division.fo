@@ -1,0 +1,7 @@
+fun int main() = 
+  let x = 20 in
+  let y = 4 in
+  let z = 0 in
+  let result1 = x / y in
+  let result2 = x / z in  // This should raise "Division by zero"
+  write(result1)

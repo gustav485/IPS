@@ -125,7 +125,7 @@ let rec removeDeadBindingsInExp (e : TypedExp) : (bool * DBRtab * TypedExp) =
 
             let uses = recordUse name (SymTab.empty ())
             let (eio, euses, e') = removeDeadBindingsInExp ei
-            (eio, SymTab.combine uses euses, Index(name, e', t, pos))
+            (true, SymTab.combine uses euses, Index(name, e', t, pos))
             //failwith "Unimplemented removeDeadBindingsInExp for Index"
 
         | Let (Dec (name, def, decpos), body, pos) ->
@@ -221,7 +221,7 @@ let rec removeDeadBindingsInExp (e : TypedExp) : (bool * DBRtab * TypedExp) =
         | Divide (x, y, pos) ->
             let (xios, xuses, x') = removeDeadBindingsInExp x
             let (yios, yuses, y') = removeDeadBindingsInExp y
-            (xios || yios,
+            (true,
              SymTab.combine xuses yuses,
              Divide (x', y', pos))
         | And (x, y, pos) ->

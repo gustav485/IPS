@@ -1,0 +1,9 @@
+fun bool print(bool a) = write(a)
+
+fun [bool] main() = 
+  let a = true; b = false; c = true in
+  let result1 = a && b in   // Exp to be false
+  let result2 = b && a in   // Exp to be false (short-circuit)
+  let result3 = a && c in   // Exp to be true
+  let result4 = c && a in   // Exp to be true
+  map(print, {result1, result2, result3, result4})

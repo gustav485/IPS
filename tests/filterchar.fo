@@ -1,0 +1,8 @@
+fun char writeChar(char x) = write(x)
+
+fun [char] writeCharArray([char] x) = map(writeChar, x)
+
+fun [char] main() = 
+    let y = {'a', 'b', 'c'} in
+    let z = filter(fn bool (char x) => x == 'b', y) in
+    writeCharArray(z)

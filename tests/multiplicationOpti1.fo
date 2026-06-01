@@ -1,0 +1,8 @@
+fun int print(int a) = write(a)
+
+fun [int] main() = 
+  let x = read(int) in
+  let y = 100 in
+  let result1 = x * y in
+  let result2 = y * x in
+  map(print, {result1, result2})
